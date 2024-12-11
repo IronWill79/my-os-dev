@@ -64,5 +64,5 @@ READ_SECTORS_NUM equ 64
 BOOT_LOAD_ADDR equ 0x7c00
 SECTOR_SIZE equ 512
 
-hello_msg: db "Hello, world!", 0
+hello_msg: db "Hello, world!", 13, 10, 0
 error_reading_disk_msg: db "Error: failed to read disk with 0x13/ah=0x42", 13, 10, 0
