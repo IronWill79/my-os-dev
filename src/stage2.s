@@ -82,6 +82,6 @@ print_string32_return:
     ret
 
 stage2_msg: db "Hello from stage 2", 13, 10, 0
-protected_mode_msg: db "Hello from protected mode", 13, 10, 0
+protected_mode_msg: db "Hello from protected mode", 0
 
 %include "include/gdt32.s"
