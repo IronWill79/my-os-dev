@@ -77,16 +77,13 @@ start_prot_mode:
     or eax, 1 << 31
     mov cr0, eax
 
-    mov ebx, comp_mode_msg
-    call print_string32
-
     ;; new GDT has the 64-bit segment flag set. This makes the CPU switch from
     ;; IA-32e compatibility mode to 64-bit mode.
     lgdt [gdt64_pseudo_descriptor]
 
     jmp CODE_SEG64:start_long_mode
 
-    mov ebx, protected_mode_msg
+    mov ebx, prot_mode_msg
     call print_string32
 
 print_string32:
@@ -159,16 +156,43 @@ set_page_table_entry:
     popa
     ret
 
-stage2_msg: db "Hello from stage 2", 13, 10, 0
-protected_mode_msg: db "Hello from protected mode", 0
-
     [bits 64]
 
 start_long_mode:
+    mov ebx, long_mode_msg
+    call print_string64
+
+    extern _start_kernel
+    call _start_kernel
+
+end64:
     hlt
-    jmp start_long_mode
+    jmp end64
+
+print_string64:
+    VGA_BUF equ 0xb8000
+    WB_COLOR equ 0xf
+
+    mov edx, VGA_BUF
+
+print_string64_loop:
+    cmp byte [ebx], 0
+    je print_string64_return
+
+    mov al, [ebx]
+    mov ah, WB_COLOR
+    mov [edx], ax
+
+    add ebx, 1 ; next character
+    add edx, 2 ; next VGA buffer cell
+    jmp print_string64_loop
+
+print_string64_return:
+    ret
 
 %include "include/gdt32.s"
 %include "include/gdt64.s"
 
-comp_mode_msg: db "Entered 64-bit compatibility mode", 0
+stage2_msg: db "Hello from stage 2", 13, 10, 0
+prot_mode_msg: db "Hello from protected mode", 0
+long_mode_msg: db "Entered 64-bit mode", 0
