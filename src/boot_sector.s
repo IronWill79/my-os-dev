@@ -1,3 +1,5 @@
+;; NASM assembly
+
 ;; src/boot_sector.s
 
     section .boot_sector
