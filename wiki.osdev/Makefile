@@ -3,34 +3,45 @@
 .PHONY: all clean boot
 
 GNUA := i686-elf-as
-CC := gcc
-CFLAGS := -std=c99 -ffreestanding -m64 -mno-red-zone -fno-builtin -nostdinc -Wall -Wextra
+CC := i686-elf-gcc
+CFLAGS := -std=gnu99 -ffreestanding -O2 -Wall -Wextra
+
+C++ := i686-elf-g++
+CPPFLAGS := -ffreestanding -O2 -Wall -Wextra -fno-exceptions -fno-rtti
+
+LINKER := i686-elf-gcc
+GCC_LINKER_FLAGS := -ffreestanding -O2 -nostdlib
+LINKER_FLAGS := -lgcc
 
 BUILD_DIR := build
 SRC_DIR := src
 
 SRC := $(wildcard $(SRC_DIR)/*)
 OBJS := $(patsubst $(SRC_DIR)/%, $(BUILD_DIR)/%.o, $(SRC))
-BOOT_IMAGE := $(BUILD_DIR)/boot_image
+BOOT_IMAGE := $(BUILD_DIR)/myos.bin
+ISO_IMAGE := $(BUILD_DIR)/myos.iso
 
-all: $(BOOT_IMAGE)
+all: $(ISO_IMAGE)
 
-boot: $(BOOT_IMAGE)
-	qemu-system-x86_64 -no-reboot -drive file=$<,format=raw,index=0,media=disk
+boot: $(ISO_IMAGE)
+	qemu-system-i386 -no-reboot -cdrom $<
 
-$(BOOT_IMAGE): $(BUILD_DIR)/linked.o
-	objcopy -O binary $< $@
+$(ISO_IMAGE): $(BOOT_IMAGE)
+	mkdir -p isodir/boot/grub
+	cp $< isodir/boot/myos.bin
+	cp grub/grub.cfg isodir/boot/grub/grub.cfg
+	grub-mkrescue -o build/myos.iso isodir
 
-$(BUILD_DIR)/linked.o: $(OBJS)
-	ld -T linker.ld -o $@ $^
+$(BOOT_IMAGE): $(OBJS)
+	$(CC) -T linker.ld -o myos.bin $(GCC_LINKER_FLAGS) $^ $(LINKER_FLAGS)
 
 $(BUILD_DIR)/%.s.o: $(SRC_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(GNUA) $< -o $@
 
-$(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.s
+$(BUILD_DIR)/%.c.o: $(SRC_DIR)/%.c
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
 	$(RM) -r $(BUILD_DIR)

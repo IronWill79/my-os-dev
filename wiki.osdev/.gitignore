@@ -1,1 +1,3 @@
 build/*
+isodir/boot/myos.bin
+myos.iso
